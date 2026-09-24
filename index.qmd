@@ -105,6 +105,83 @@ The state order in all tables and figures follows the order of Tables 1 to 8 in 
 
 ## Results
 
+### The answer in one figure
+
+@fig-answer answers the question in one figure. The left panel shows the number of FSTPs and STP co-treatment plants listed per state, and the right panel shows the installed FSTP capacity per state in KLD. Solid bars are plants that were sampled. The outlined part of the two Odisha bars is the four FSTPs that were listed but not sampled. The sections that follow give the same numbers as tables and look at each measure on its own.
+
+```{r}
+#| label: fig-answer
+#| fig-cap: "Number of FSTPs and STP co-treatment plants listed per state in Tables 1 to 8 of the report (left) and installed FSTP capacity per state in KLD (right). Solid bars are plants that were sampled. The outlined part of the two Odisha bars is the four FSTPs that were listed but not sampled. Patora (Chhattisgarh) is counted at 1.3 KLD. Uttarakhand has no FSTP, so its capacity is zero."
+#| fig-alt: "Two-panel horizontal bar chart with the eight states on the shared vertical axis. The left panel shows the number of plants: blue bars for FSTPs and orange bars for STP co-treatment plants. Odisha has 20 FSTPs, of which 4 were not sampled, Telangana has 10, Uttar Pradesh 7, Tamil Nadu 5, Madhya Pradesh 4, Rajasthan 3, Chhattisgarh 2 and Uttarakhand none. Uttarakhand has 12 STPs, Tamil Nadu 4, Uttar Pradesh 3, Telangana 2 and Odisha 1. The right panel shows installed FSTP capacity in KLD: Odisha 522, Telangana 283, Madhya Pradesh 253, Tamil Nadu 140, Uttar Pradesh 127, Rajasthan 50, Chhattisgarh 7 and Uttarakhand 0."
+#| fig-width: 10
+#| fig-height: 5
+panel_levels <- c("Number of plants listed", "Installed FSTP capacity (KLD)")
+series_levels <- c("FSTP", "STP co-treatment")
+
+answer_long <- bind_rows(
+  by_state |>
+    transmute(state, panel = panel_levels[1], series = "FSTP",
+              listed = fstp_listed, sampled = fstp_sampled),
+  by_state |>
+    transmute(state, panel = panel_levels[1], series = "STP co-treatment",
+              listed = stp, sampled = stp),
+  by_state |>
+    transmute(state, panel = panel_levels[2], series = "FSTP",
+              listed = kld_listed, sampled = kld_sampled)
+) |>
+  mutate(
+    state = fct_rev(state),
+    panel = factor(panel, levels = panel_levels),
+    series = factor(series, levels = series_levels),
+    # Bars sit on a numeric y axis. In the left panel the FSTP bar is above
+    # and the STP bar below the state line. The right panel has one bar.
+    y_centre = as.numeric(state) +
+      case_when(panel == panel_levels[2] ~ 0,
+                series == "FSTP" ~ 0.19,
+                TRUE ~ -0.19),
+    half_height = if_else(panel == panel_levels[2], 0.3, 0.17),
+    label = if_else(
+      listed > sampled,
+      paste0(scales::comma(listed, accuracy = 1), " (",
+             scales::comma(listed - sampled, accuracy = 1), " not sampled)"),
+      scales::comma(listed, accuracy = 1)
+    )
+  )
+
+# Room for the longest label in each panel
+panel_room <- tibble(panel = factor(panel_levels, levels = panel_levels),
+                     x = c(31, 900), y_centre = 1)
+
+series_colours <- c("FSTP" = blue, "STP co-treatment" = orange)
+
+ggplot(answer_long, aes(y = y_centre)) +
+  geom_blank(data = panel_room, aes(x = x)) +
+  geom_rect(data = filter(answer_long, listed > 0),
+            aes(xmin = 0, xmax = listed,
+                ymin = y_centre - half_height, ymax = y_centre + half_height,
+                colour = series),
+            fill = surface, linewidth = 0.6) +
+  geom_rect(data = filter(answer_long, sampled > 0),
+            aes(xmin = 0, xmax = sampled,
+                ymin = y_centre - half_height, ymax = y_centre + half_height,
+                fill = series, colour = series),
+            linewidth = 0.6) +
+  geom_text(aes(x = listed, label = label),
+            hjust = -0.15, size = 3.1, colour = ink) +
+  facet_wrap(~panel, scales = "free_x") +
+  scale_fill_manual(values = series_colours, name = NULL, drop = FALSE) +
+  scale_colour_manual(values = series_colours, name = NULL, drop = FALSE) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.02)),
+                     labels = scales::label_comma()) +
+  scale_y_continuous(breaks = seq_along(levels(answer_long$state)),
+                     labels = levels(answer_long$state),
+                     expand = expansion(add = 0.5)) +
+  labs(x = NULL, y = NULL) +
+  theme_manuscript() +
+  theme(strip.text = element_text(colour = ink, size = 11, hjust = 0),
+        panel.spacing.x = unit(1.5, "lines"))
+```
+
 ### Plants evaluated per state
 
 @tbl-by-state gives the counts and the installed FSTP capacity for each state. @fig-counts shows the counts.
