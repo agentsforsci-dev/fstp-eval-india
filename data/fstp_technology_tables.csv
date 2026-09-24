@@ -1,0 +1,74 @@
+state,table_no,s_no,location,capacity_value,capacity_unit,technology,plant_type,sampled,note
+Telangana,1,1,Boduppal,15,KLD,Geotube technology,FSTP,TRUE,
+Telangana,1,2,Uppal,40,KLD,Combined biological treatment with solar sludge drying and decontamination,FSTP,TRUE,
+Telangana,1,3,Khajaguda,7,MLD,Moving bed bioreactor (STP co-treatment),STP co-treatment,TRUE,
+Telangana,1,4,Nanakramguda,4.5,MLD,Moving bed bioreactor (STP co-treatment),STP co-treatment,TRUE,
+Telangana,1,5,Bhongir,15,KLD,Geotube technology,FSTP,TRUE,
+Telangana,1,6,Shadnagar,25,KLD,Geotube technology,FSTP,TRUE,
+Telangana,1,7,Siddipet,20,KLD,DEWATS,FSTP,TRUE,
+Telangana,1,8,Sircilla,18,KLD,DEWATS,FSTP,TRUE,
+Telangana,1,9,Nirmal,30,KLD,Moving bed bioreactor,FSTP,TRUE,
+Telangana,1,10,Kamareddy,30,KLD,"Moving bed bioreactor, paddle drying and IR radiation of sludge",FSTP,TRUE,
+Telangana,1,11,Warangal,15,KLD,"Packaged STP, sludge processing by pyrolysis",FSTP,TRUE,
+Telangana,1,12,Nalgonda,75,KLD,Electrocoagulation,FSTP,TRUE,
+Tamil Nadu,2,1,"Ukkadam, Coimbatore",70,MLD,SBR (STP co-treatment),STP co-treatment,TRUE,
+Tamil Nadu,2,2,"PNP, Coimbatore",30,KLD,MBBR,FSTP,TRUE,
+Tamil Nadu,2,3,Erode,50,MLD,MBBR (STP co-treatment),STP co-treatment,TRUE,
+Tamil Nadu,2,4,"Thuraiyur, Tiruchirapalli",20,KLD,DWWT,FSTP,TRUE,
+Tamil Nadu,2,5,Tiruchirapalli,58,MLD,Waste stabilization pond (STP co-treatment),STP co-treatment,TRUE,
+Tamil Nadu,2,6,Madurai,125,MLD,SBR (STP co-treatment),STP co-treatment,TRUE,
+Tamil Nadu,2,7,"Tirumangalam, Madurai",40,KLD,DWWT,FSTP,TRUE,Printed as row number -7 in the report
+Tamil Nadu,2,8,"VK puram, Tirunelveli",30,KLD,DWWT,FSTP,TRUE,
+Tamil Nadu,2,9,"Shenkottai, Thenkasi",20,KLD,DWWT,FSTP,TRUE,
+Odisha,3,1,Puri,50,KLD,STP co-treatment: waste stabilization pond,STP co-treatment,TRUE,50 KLD septage treatment plant that separates solids on site; the liquid fraction is co-treated in the adjacent 15 MLD Mangala Ghat STP
+Odisha,3,2,Balasore,60,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,3,Baripada,50,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,4,Bhubaneswar,75,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,5,Dhenkanal,27,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,6,Berhampur,40,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,7,Angul,18,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,8,Sambalpur,20,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,9,Rourkela,40,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,10,Asika,10,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,11,Bhadrak,30,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,12,Choudwar,12,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,13,Jagatsinghpur,20,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,14,Jatni,20,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,15,Khordha,20,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,16,Nimapada,10,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,17,Paralakhemundi,20,KLD,DEWATS,FSTP,TRUE,
+Odisha,3,18,Surada,10,KLD,DEWATS,FSTP,FALSE,Marked ** in the report: water samples could not be collected because there was no outlet water
+Odisha,3,19,Kashinagar,10,KLD,DEWATS,FSTP,FALSE,Marked ** in the report: water samples could not be collected because there was no outlet water
+Odisha,3,20,Hinjilicut,10,KLD,DEWATS,FSTP,FALSE,Marked ** in the report: water samples could not be collected because there was no outlet water
+Odisha,3,21,Talcher,20,KLD,DEWATS,FSTP,FALSE,Marked ** in the report: water samples could not be collected because there was no outlet water
+Rajasthan,4,1,Phulera,20,KLD,DEWATS,FSTP,TRUE,
+Rajasthan,4,2,Lalsot,20,KLD,DEWATS,FSTP,TRUE,
+Rajasthan,4,3,Khandela,10,KLD,DEWATS,FSTP,TRUE,
+Uttar Pradesh,5,1,Unnao,32,KLD,DEWATS,FSTP,TRUE,
+Uttar Pradesh,5,2,Jhansi,6,KLD,DEWATS,FSTP,TRUE,First of two treatment systems on the same campus
+Uttar Pradesh,5,3,Jhansi,12,KLD,DEWATS,FSTP,TRUE,Second of two treatment systems on the same campus
+Uttar Pradesh,5,4,Chunar,10,KLD,DEWATS,FSTP,TRUE,
+Uttar Pradesh,5,5,Modinagar,32,KLD,Hyper core (LAMELLA),FSTP,TRUE,
+Uttar Pradesh,5,6,Loni,32,KLD,MBBR,FSTP,TRUE,
+Uttar Pradesh,5,7,Amethi,3,KLD,DEWATS,FSTP,TRUE,
+Uttar Pradesh,5,8,Bharwara,345,MLD,UASB (STP co-treatment),STP co-treatment,TRUE,
+Uttar Pradesh,5,9,Bijnor,24,MLD,UASB (STP co-treatment),STP co-treatment,TRUE,
+Uttar Pradesh,5,10,Bingawan,210,MLD,UASB (STP co-treatment),STP co-treatment,TRUE,
+Madhya Pradesh,6,1,Indore,3,KLD,DEWATS,FSTP,TRUE,
+Madhya Pradesh,6,2,"Elanza, Jabalpur",50,KLD,Mizuchi,FSTP,TRUE,
+Madhya Pradesh,6,3,"Ojus, Jabalpur",100,KLD,Mizuchi,FSTP,TRUE,
+Madhya Pradesh,6,4,"St. Alosius, Jabalpur",100,KLD,Mizuchi,FSTP,TRUE,
+Chhattisgarh,7,1,Kumhari,6,KLD,DEWATS,FSTP,TRUE,
+Chhattisgarh,7,2,Patora,9,KL/week,DEWATS,FSTP,TRUE,Printed as 9 KLW; the state chapter defines KLW as kilolitre per week
+Uttarakhand,8,1,"Lakkarghat, Rishikesh",26,MLD,SBR,STP co-treatment,TRUE,
+Uttarakhand,8,2,"Chorpani, Rishikesh",5,MLD,MBBR,STP co-treatment,TRUE,
+Uttarakhand,8,3,"Chandreswar, Rishikesh",7.5,MLD,MBBR,STP co-treatment,TRUE,
+Uttarakhand,8,4,"Tapovan, Rishikesh",3.5,MLD,SBR,STP co-treatment,TRUE,
+Uttarakhand,8,5,"Mothrowala-I, Dehradun",20,MLD,SBR,STP co-treatment,TRUE,
+Uttarakhand,8,6,"Mothrowala-II, Dehradun",20,MLD,SBR,STP co-treatment,TRUE,
+Uttarakhand,8,7,"Indira Nagar, Dehradun",5,MLD,SBR,STP co-treatment,TRUE,
+Uttarakhand,8,8,"Jagjeetpur, Haridwar",68,MLD,SBR,STP co-treatment,TRUE,First of three STPs at Jagjeetpur
+Uttarakhand,8,9,"Jagjeetpur, Haridwar",27,MLD,SBR,STP co-treatment,TRUE,Second of three STPs at Jagjeetpur
+Uttarakhand,8,10,"Jagjeetpur, Haridwar",18,MLD,ASP,STP co-treatment,TRUE,Third of three STPs at Jagjeetpur
+Uttarakhand,8,11,"Sarai, Haridwar",18,MLD,SBR,STP co-treatment,TRUE,First of two STPs at Sarai
+Uttarakhand,8,12,"Sarai, Haridwar",14,MLD,SBR,STP co-treatment,TRUE,Second of two STPs at Sarai

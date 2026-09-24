@@ -1,0 +1,291 @@
+---
+title: "Plants evaluated per state in the CSE Phase II study of FSTPs and STP co-treatment systems in India"
+subtitle: "Plant counts and installed FSTP capacity from Tables 1 to 8 of the report"
+author:
+  - name: Lars Schöbitz
+    email: lars@lse.de
+    roles: [analysis, writing]
+date: 2026-09-24
+abstract: |
+  The Centre for Science and Environment (CSE) evaluated faecal sludge treatment plants (FSTPs) and sewage treatment plants (STPs) that co-treat faecal sludge in eight Indian states. The report lists the evaluated plants in eight state-wise technology tables. I transcribed Tables 1 to 8, classified each row as an FSTP or an STP co-treatment plant, and summed the installed FSTP capacity in kilolitres per day (KLD) for each state. The tables list 73 plants, 51 FSTPs and 22 STP co-treatment plants. Four FSTPs in Odisha are listed but were not sampled, so the counts that match the report's own narrative are 47 FSTPs and 22 STPs. Odisha has the most FSTPs and the largest installed FSTP capacity, and Uttarakhand has the most STP co-treatment plants and no FSTP. The FSTP capacity listed in the tables sums to about 1.38 million litres per day, which is below the 1.6 million litres per day stated in the report's executive summary.
+keywords: [faecal sludge treatment, FSTP, STP co-treatment, India, Centre for Science and Environment]
+bibliography: references.bib
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(gt)
+
+state_levels <- c("Telangana", "Tamil Nadu", "Odisha", "Rajasthan",
+                  "Uttar Pradesh", "Madhya Pradesh", "Chhattisgarh", "Uttarakhand")
+
+blue <- "#2a78d6"
+orange <- "#eb6834"
+surface <- "#fcfcfb"
+ink <- "#0b0b0b"
+ink_muted <- "#52514e"
+
+plants <- read_csv("data/fstp_technology_tables.csv", show_col_types = FALSE) |>
+  mutate(
+    state = factor(state, levels = state_levels),
+    plant_type = factor(plant_type, levels = c("FSTP", "STP co-treatment")),
+    capacity_kld = case_when(
+      capacity_unit == "KLD" ~ capacity_value,
+      capacity_unit == "KL/week" ~ capacity_value / 7,
+      capacity_unit == "MLD" ~ capacity_value * 1000
+    ),
+    capacity_printed = paste(capacity_value, capacity_unit)
+  )
+
+fstp <- plants |> filter(plant_type == "FSTP")
+
+by_state <- plants |>
+  group_by(state) |>
+  summarise(
+    fstp_listed = sum(plant_type == "FSTP"),
+    fstp_sampled = sum(plant_type == "FSTP" & sampled),
+    stp = sum(plant_type == "STP co-treatment"),
+    kld_listed = sum(capacity_kld[plant_type == "FSTP"]),
+    kld_sampled = sum(capacity_kld[plant_type == "FSTP" & sampled]),
+    .groups = "drop"
+  )
+
+totals <- by_state |>
+  summarise(across(-state, sum))
+
+puri_kld <- plants |>
+  filter(location == "Puri") |>
+  pull(capacity_kld)
+
+theme_manuscript <- function() {
+  theme_minimal(base_size = 12) +
+    theme(
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_line(colour = "#e6e5e1", linewidth = 0.3),
+      axis.text = element_text(colour = ink),
+      axis.title = element_text(colour = ink_muted),
+      legend.position = "top",
+      legend.justification = "left",
+      legend.text = element_text(colour = ink),
+      plot.background = element_rect(fill = surface, colour = NA),
+      plot.title.position = "plot"
+    )
+}
+```
+
+## Introduction
+
+The Centre for Science and Environment (CSE) published a Phase II study in 2023 that evaluated faecal sludge treatment plants (FSTPs) and sewage treatment plants (STPs) that co-treat faecal sludge across India [@narain2023]. The report lists the evaluated plants in eight state-wise technology tables, numbered Tables 1 to 8. Each table gives the plant location, the installed capacity, the treatment technology, and a short description of the treatment steps.
+
+This manuscript answers one question from those tables. For each of the eight states, how many FSTPs and how many STP co-treatment plants were evaluated, and what is the total installed FSTP capacity in kilolitres per day (KLD)?
+
+## Data and method
+
+### Source
+
+The only data source is the PDF of the report stored in this repository under `data/`. I extracted the text of pages 26 to 33 with the pdftotext tool and transcribed Tables 1 to 8 by hand into the file `data/fstp_technology_tables.csv`. The CSV has one row per table row, `r nrow(plants)` rows in total, and keeps the capacity value and unit exactly as printed. Every capacity in the CSV was checked against the plant description in the state chapters of the report.
+
+### Classification rules
+
+I classified each row as an FSTP or an STP co-treatment plant with two rules.
+
+- A row is an STP co-treatment plant when the technology or description column says "STP co-treatment", or when the row appears in Table 8, which lists only sewage treatment plants. All of these rows have a capacity in megalitres per day (MLD), except Puri.
+- Every other row is an FSTP. All FSTP rows have a capacity in KLD, except Patora.
+
+Four cases needed a judgement call.
+
+- Puri (Odisha, Table 3) is printed as "STP co-treatment: waste stabilization pond" with a capacity of 50 KLD. The Odisha chapter explains that Puri has a 50 KLD septage treatment plant that separates solids on site and sends the liquid fraction to the adjacent 15 MLD Mangala Ghat STP. The report counts Puri as the one STP in Odisha, and Table 10 of the report lists it among the 22 STPs. I follow the report and count Puri as an STP co-treatment plant, so its 50 KLD is not part of the FSTP capacity total.
+- Patora (Chhattisgarh, Table 7) is printed as "9 KLW". The Chhattisgarh chapter defines KLW as kilolitre per week. I convert it to 1.3 KLD (9 divided by 7) for the capacity total and keep the printed unit in the CSV.
+- Jhansi (Uttar Pradesh, Table 5) appears twice, once at 6 KLD and once at 12 KLD. The Uttar Pradesh chapter says these are two treatment systems on the same campus. I count them as two FSTPs, which matches the report's own count of seven FSTPs in Uttar Pradesh.
+- Four Odisha rows (Surada, Kashinagar, Hinjilicut and Talcher) carry a double asterisk. The table footnote says water samples could not be collected because there was no outlet water. The report's narrative count for Odisha is 16 FSTPs and one STP, which excludes these four plants. I report Odisha both ways, with and without the four unsampled plants.
+
+The state order in all tables and figures follows the order of Tables 1 to 8 in the report.
+
+## Results
+
+### Plants evaluated per state
+
+@tbl-by-state gives the counts and the installed FSTP capacity for each state. @fig-counts shows the counts.
+
+```{r}
+#| label: tbl-by-state
+#| tbl-cap: "Plants listed in Tables 1 to 8 of the report and installed FSTP capacity per state. The sampled columns exclude the four Odisha FSTPs that were listed but not sampled. Patora (Chhattisgarh) is counted at 1.3 KLD, which is 9 kilolitres per week divided by 7. Puri (Odisha) is counted as the STP co-treatment plant and is not part of the FSTP capacity."
+by_state |>
+  mutate(state = as.character(state)) |>
+  bind_rows(totals |> mutate(state = "All eight states")) |>
+  gt(rowname_col = "state") |>
+  tab_spanner(label = "Number of plants", columns = c(fstp_listed, fstp_sampled, stp)) |>
+  tab_spanner(label = "Installed FSTP capacity (KLD)", columns = c(kld_listed, kld_sampled)) |>
+  cols_label(
+    fstp_listed = "FSTPs listed",
+    fstp_sampled = "FSTPs sampled",
+    stp = "STP co-treatment",
+    kld_listed = "Listed",
+    kld_sampled = "Sampled"
+  ) |>
+  fmt_number(columns = c(kld_listed, kld_sampled), decimals = 1) |>
+  fmt_integer(columns = c(fstp_listed, fstp_sampled, stp)) |>
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = list(cells_body(rows = state == "All eight states"),
+                     cells_stub(rows = state == "All eight states"))
+  ) |>
+  tab_options(table.font.size = px(14))
+```
+
+```{r}
+#| label: fig-counts
+#| fig-cap: "Number of FSTPs and STP co-treatment plants listed per state in Tables 1 to 8 of the report. The Odisha FSTP count includes four plants that were listed but not sampled."
+#| fig-alt: "Horizontal bar chart with one pair of bars per state. Blue bars show FSTPs and orange bars show STP co-treatment plants. Odisha has the most FSTPs with 20, of which 4 were not sampled, followed by Telangana with 10. Uttarakhand has 12 STPs and no FSTPs."
+counts_long <- by_state |>
+  mutate(not_sampled = fstp_listed - fstp_sampled) |>
+  select(state, not_sampled, FSTP = fstp_listed, `STP co-treatment` = stp) |>
+  pivot_longer(c(FSTP, `STP co-treatment`), names_to = "plant_type", values_to = "n") |>
+  mutate(
+    plant_type = factor(plant_type, levels = c("FSTP", "STP co-treatment")),
+    state = fct_rev(state),
+    label = if_else(plant_type == "FSTP" & not_sampled > 0,
+                    paste0(n, " (", not_sampled, " not sampled)"),
+                    as.character(n))
+  )
+
+ggplot(counts_long, aes(x = n, y = state, fill = plant_type)) +
+  geom_col(position = position_dodge2(width = 0.75, reverse = TRUE), width = 0.7) +
+  geom_text(aes(label = label),
+            position = position_dodge2(width = 0.75, reverse = TRUE),
+            hjust = -0.2, size = 3.3, colour = ink) +
+  scale_fill_manual(values = c("FSTP" = blue, "STP co-treatment" = orange), name = NULL) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.35)),
+                     breaks = seq(0, 20, by = 5)) +
+  labs(x = "Number of plants listed", y = NULL) +
+  theme_manuscript()
+```
+
+Telangana, Tamil Nadu, Odisha and Uttar Pradesh have both plant types. Rajasthan, Madhya Pradesh and Chhattisgarh have only FSTPs. Uttarakhand has only STPs, because Table 8 is a list of sewage treatment plants and the study evaluated no FSTP there.
+
+### Installed FSTP capacity per state
+
+@fig-capacity shows the installed FSTP capacity per state. Odisha has the largest capacity because it has the most plants. Telangana is second, and Madhya Pradesh is third even though it has only four FSTPs, because two of its plants in Jabalpur have a capacity of 100 KLD each. @fig-plants shows every FSTP as one point, so the reader can see how many plants make up each state's total and how large each plant is.
+
+```{r}
+#| label: fig-capacity
+#| fig-cap: "Installed FSTP capacity per state in KLD, summed from Tables 1 to 8 of the report. The solid part of each bar is the capacity of the FSTPs that were sampled. The outlined part is the capacity of the four Odisha FSTPs that were listed but not sampled. The label gives the total of the listed capacity."
+#| fig-alt: "Horizontal bar chart of installed FSTP capacity in KLD per state. Odisha has the largest capacity at 522 KLD, of which 50 KLD belongs to four plants that were not sampled. Telangana follows with 283 KLD and Madhya Pradesh with 253 KLD. Chhattisgarh has about 7 KLD and Uttarakhand has none."
+cap_long <- by_state |>
+  transmute(state,
+            `Sampled` = kld_sampled,
+            `Listed but not sampled` = kld_listed - kld_sampled) |>
+  pivot_longer(-state, names_to = "status", values_to = "kld") |>
+  filter(kld > 0) |>
+  mutate(status = factor(status, levels = c("Listed but not sampled", "Sampled")),
+         state = fct_rev(state))
+
+cap_labels <- by_state |>
+  mutate(state = fct_rev(state),
+         label = format(round(kld_listed), big.mark = ","))
+
+ggplot(cap_long, aes(x = kld, y = state)) +
+  geom_col(aes(fill = status, colour = status), width = 0.7, linewidth = 0.6) +
+  geom_text(data = cap_labels, aes(x = kld_listed, label = label),
+            hjust = -0.25, size = 3.3, colour = ink) +
+  scale_fill_manual(values = c("Sampled" = blue, "Listed but not sampled" = surface),
+                    breaks = c("Sampled", "Listed but not sampled"), name = NULL) +
+  scale_colour_manual(values = c("Sampled" = blue, "Listed but not sampled" = blue),
+                      breaks = c("Sampled", "Listed but not sampled"), name = NULL) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.15)),
+                     labels = scales::label_comma()) +
+  scale_y_discrete(drop = FALSE) +
+  labs(x = "Installed FSTP capacity (KLD)", y = NULL) +
+  theme_manuscript()
+```
+
+```{r}
+#| label: fig-plants
+#| fig-cap: "Installed capacity of every FSTP listed in Tables 1 to 7 of the report, one point per plant. Points are moved a little up or down so that plants with the same capacity do not hide each other. Hollow points are the four Odisha FSTPs that were listed but not sampled. Uttarakhand is not shown because Table 8 lists no FSTP."
+#| fig-alt: "Dot plot of individual FSTP capacities in KLD by state. Most plants are between 10 and 40 KLD. The largest plants are two 100 KLD plants in Madhya Pradesh, a 75 KLD plant in Telangana and a 75 KLD plant in Odisha. The smallest plants are 3 KLD in Uttar Pradesh and Madhya Pradesh and about 1.3 KLD in Chhattisgarh."
+fstp_points <- fstp |>
+  mutate(state = fct_rev(fct_drop(state)),
+         status = if_else(sampled, "Sampled", "Listed but not sampled"),
+         status = factor(status, levels = c("Sampled", "Listed but not sampled")))
+
+ggplot(fstp_points, aes(x = capacity_kld, y = state)) +
+  geom_point(aes(fill = status), shape = 21, size = 3, colour = blue, stroke = 0.8,
+             position = position_jitter(width = 0, height = 0.28, seed = 42)) +
+  scale_fill_manual(values = c("Sampled" = blue, "Listed but not sampled" = surface),
+                    name = NULL) +
+  scale_x_continuous(breaks = seq(0, 100, by = 20),
+                     expand = expansion(mult = c(0.02, 0.05))) +
+  labs(x = "Installed capacity of the plant (KLD)", y = NULL) +
+  theme_manuscript() +
+  theme(panel.grid.major.y = element_line(colour = "#e6e5e1", linewidth = 0.3))
+```
+
+### Comparison with the totals stated in the report
+
+The report states in its executive summary that 69 plants were evaluated, 47 FSTPs and 22 STPs. The tables list `r nrow(plants)` plants, `r totals$fstp_listed` FSTPs and `r totals$stp` STP co-treatment plants. The difference of four plants is the four unsampled Odisha FSTPs. Once those four are removed, the counts match the report's narrative in every state.
+
+The report also states that the 47 FSTPs have an approximate combined installed capacity of 1.6 million litres per day (MLD). @tbl-comparison shows that the table capacities do not add up to that figure. None of the three ways of summing the tables reaches 1.6 MLD, so the report's figure cannot be reproduced from Tables 1 to 8. The report does not explain how the 1.6 MLD was derived.
+
+```{r}
+#| label: tbl-comparison
+#| tbl-cap: "Total installed FSTP capacity summed from Tables 1 to 8 in three ways, compared with the figure stated in the executive summary of the report."
+tribble(
+  ~variant, ~fstps, ~kld,
+  "FSTPs sampled (the report's count of 47)", totals$fstp_sampled, totals$kld_sampled,
+  "All FSTPs listed in Tables 1 to 8", totals$fstp_listed, totals$kld_listed,
+  "All FSTPs listed plus the Puri septage plant", totals$fstp_listed + 1, totals$kld_listed + puri_kld,
+  "Stated in the executive summary of the report", 47, 1600
+) |>
+  mutate(mld = kld / 1000) |>
+  gt() |>
+  cols_label(variant = "How the total is formed",
+             fstps = "FSTPs",
+             kld = "Capacity (KLD)",
+             mld = "Capacity (MLD)") |>
+  fmt_integer(columns = fstps) |>
+  fmt_number(columns = kld, decimals = 0) |>
+  fmt_number(columns = mld, decimals = 2) |>
+  tab_options(table.font.size = px(14))
+```
+
+## Limitations
+
+The counts and capacities come from a hand transcription of a PDF. I checked each capacity against the state chapters of the report, but a transcription error is still possible. The report itself contains inconsistencies. For example, the sampling strategy section says the study covers six states and then lists eight, and the Erode STP is 50 MLD in Table 2 and 50.55 MLD in the Tamil Nadu chapter. Where the tables and the chapters differ, this manuscript uses the tables, because the question asks for the values in Tables 1 to 8.
+
+The capacity totals treat the 9 kilolitres per week at Patora as 1.3 KLD. If a reader prefers to leave Patora out, the Chhattisgarh total is 6 KLD and the total for all states falls by 1.3 KLD.
+
+## Conclusion
+
+Tables 1 to 8 of the CSE report list `r totals$fstp_listed` FSTPs and `r totals$stp` STP co-treatment plants across eight states. The plant counts per state are in @tbl-by-state. Odisha has the most FSTPs and the largest installed FSTP capacity, Telangana has the second most FSTPs, and Uttarakhand has the most STP co-treatment plants and no FSTP. The installed FSTP capacity in the tables sums to `r format(round(totals$kld_listed), big.mark = ",")` KLD for all listed FSTPs and `r format(round(totals$kld_sampled), big.mark = ",")` KLD for the 47 FSTPs that were sampled. Both figures are below the 1.6 MLD that the report states in its executive summary.
+
+## Appendix: every plant in Tables 1 to 8 {.appendix}
+
+@tbl-plants lists every row of Tables 1 to 8 with the capacity as printed in the report.
+
+```{r}
+#| label: tbl-plants
+#| tbl-cap: "All plants listed in Tables 1 to 8 of the report, with the capacity as printed. The table number and row number refer to the report."
+plants |>
+  mutate(sampled = if_else(sampled, "Yes", "No"),
+         note = replace_na(note, "")) |>
+  select(state, table_no, s_no, location, plant_type, capacity_printed, technology, sampled, note) |>
+  gt(groupname_col = "state") |>
+  cols_label(
+    table_no = "Table",
+    s_no = "Row",
+    location = "Location",
+    plant_type = "Plant type",
+    capacity_printed = "Capacity as printed",
+    technology = "Technology",
+    sampled = "Sampled",
+    note = "Note"
+  ) |>
+  tab_options(table.font.size = px(12))
+```
+
+## References {.unnumbered}
+
+::: {#refs}
+:::
