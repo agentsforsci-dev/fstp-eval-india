@@ -9,7 +9,7 @@ Quarto manuscripts that answer questions from the Centre for Science and Environ
 ## Folder template
 
 - `data/raw_data/` holds source documents exactly as obtained. Never edit a file here. The only file is the report PDF.
-- `data/derived_data/` holds tables extracted from the raw data, one CSV per table. Prefer a script in `analysis/` that writes the table. A hand transcription is allowed when a script is not worth it, and the README must say which tables are hand transcribed.
+- `data/derived_data/` holds tables extracted from the raw data, one CSV per table. Prefer a script in `analysis/` that writes the table. A hand transcription is allowed when a script is not worth it, and the README must say which tables are hand transcribed. A hand transcribed table gets a check script that reads what it can back from the PDF and stops on any difference.
 - `data/metadata/codebook.csv` is the single codebook for every derived table. See the codebook section.
 - `analysis/` holds the manuscripts (`.qmd`) and the scripts (`.R`).
 - `prompts/` holds the verbatim prompts behind Claude assisted commits. The commit skill writes these files; do not edit them by hand.
@@ -35,10 +35,11 @@ The Quarto project at the root is a default project with `execute-dir: project`,
 
 ```
 Rscript analysis/01-extract-annexure-2-faecal-coliform.R
+Rscript analysis/02-check-fstp-technology-tables.R
 quarto render
 ```
 
-The script rebuilds the Annexure II table from the PDF and is optional, because the table is committed. It needs the `pdftotext` tool from poppler. `quarto render` writes both manuscripts to `_output/analysis/`. The plants-per-state manuscript renders to HTML and DOCX from the project formats; the log reduction manuscript sets `format: docx` in its own YAML and renders only to DOCX. Rendering needs Quarto 1.4 or later and R with tidyverse and gt.
+The first script rebuilds the Annexure II table from the PDF and is optional, because the table is committed. The second checks the hand transcribed technology table against the PDF and writes nothing. Both need the `pdftotext` tool from poppler. `quarto render` writes both manuscripts to `_output/analysis/`. The plants-per-state manuscript renders to HTML and DOCX from the project formats; the log reduction manuscript sets `format: docx` in its own YAML and renders only to DOCX. Rendering needs Quarto 1.4 or later and R with tidyverse and gt.
 
 On this machine `quarto` is not on the PATH. Use the RStudio bundled binary:
 
