@@ -1,4 +1,5 @@
 .quarto/
+_output/
 _manuscript/
 *_files/
 .DS_Store

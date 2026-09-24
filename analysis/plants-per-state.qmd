@@ -9,7 +9,6 @@ date: 2026-09-24
 abstract: |
   The Centre for Science and Environment (CSE) evaluated faecal sludge treatment plants (FSTPs) and sewage treatment plants (STPs) that co-treat faecal sludge in eight Indian states. The report lists the evaluated plants in eight state-wise technology tables. I transcribed Tables 1 to 8, classified each row as an FSTP or an STP co-treatment plant, and summed the installed FSTP capacity in kilolitres per day (KLD) for each state. The tables list 73 plants, 51 FSTPs and 22 STP co-treatment plants. Four FSTPs in Odisha are listed but were not sampled, so the counts that match the report's own narrative are 47 FSTPs and 22 STPs. Odisha has the most FSTPs and the largest installed FSTP capacity, and Uttarakhand has the most STP co-treatment plants and no FSTP. The FSTP capacity listed in the tables sums to about 1.38 million litres per day, which is below the 1.6 million litres per day stated in the report's executive summary.
 keywords: [faecal sludge treatment, FSTP, STP co-treatment, India, Centre for Science and Environment]
-bibliography: references.bib
 ---
 
 ```{r}
@@ -26,7 +25,7 @@ surface <- "#fcfcfb"
 ink <- "#0b0b0b"
 ink_muted <- "#52514e"
 
-plants <- read_csv("data/fstp_technology_tables.csv", show_col_types = FALSE) |>
+plants <- read_csv("data/derived_data/fstp-technology-tables.csv", show_col_types = FALSE) |>
   mutate(
     state = factor(state, levels = state_levels),
     plant_type = factor(plant_type, levels = c("FSTP", "STP co-treatment")),
@@ -85,7 +84,7 @@ This manuscript answers one question from those tables. For each of the eight st
 
 ### Source
 
-The only data source is the PDF of the report stored in this repository under `data/`. I extracted the text of pages 26 to 33 with the pdftotext tool and transcribed Tables 1 to 8 by hand into the file `data/fstp_technology_tables.csv`. The CSV has one row per table row, `r nrow(plants)` rows in total, and keeps the capacity value and unit exactly as printed. Every capacity in the CSV was checked against the plant description in the state chapters of the report.
+The only data source is the PDF of the report stored in this repository under `data/raw_data/`. I extracted the text of pages 26 to 33 with the pdftotext tool and transcribed Tables 1 to 8 by hand into the file `data/derived_data/fstp-technology-tables.csv`. The CSV has one row per table row, `r nrow(plants)` rows in total, and keeps the capacity value and unit exactly as printed. Every capacity in the CSV was checked against the plant description in the state chapters of the report.
 
 ### Classification rules
 
