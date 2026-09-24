@@ -9,7 +9,6 @@ date: 2026-09-24
 abstract: |
   The Centre for Science and Environment (CSE) evaluated faecal sludge treatment plants (FSTPs) and sewage treatment plants (STPs) that co-treat faecal sludge in eight Indian states. The report lists the evaluated plants in eight state-wise technology tables. I transcribed Tables 1 to 8, classified each row as an FSTP or an STP co-treatment plant, and summed the installed FSTP capacity in kilolitres per day (KLD) for each state. The tables list 73 plants, 51 FSTPs and 22 STP co-treatment plants. Four FSTPs in Odisha are listed but were not sampled, so the counts that match the report's own narrative are 47 FSTPs and 22 STPs. Odisha has the most FSTPs and the largest installed FSTP capacity, and Uttarakhand has the most STP co-treatment plants and no FSTP. The FSTP capacity listed in the tables sums to about 1.38 million litres per day, which is below the 1.6 million litres per day stated in the report's executive summary.
 keywords: [faecal sludge treatment, FSTP, STP co-treatment, India, Centre for Science and Environment]
-bibliography: references.bib
 ---
 
 ```{r}
@@ -26,7 +25,32 @@ surface <- "#fcfcfb"
 ink <- "#0b0b0b"
 ink_muted <- "#52514e"
 
-plants <- read_csv("data/fstp_technology_tables.csv", show_col_types = FALSE) |>
+# Read the derived table and check it before any computation. The checks repeat
+# those of analysis/02-check-fstp-technology-tables.R that do not need the PDF,
+# so a stale or edited table stops the render here.
+plants_raw <- read_csv("data/derived_data/fstp-technology-tables.csv", show_col_types = FALSE)
+codebook <- read_csv("data/metadata/codebook.csv", show_col_types = FALSE)
+stopifnot(identical(codebook$name[codebook$file == "fstp-technology-tables.csv"], names(plants_raw)))
+stopifnot(nrow(plants_raw) == 73, !anyNA(select(plants_raw, -note)))
+stopifnot(identical(unique(plants_raw$state), state_levels),
+          identical(plants_raw$state, state_levels[plants_raw$table_no]))
+stopifnot(all(plants_raw$s_no == ave(plants_raw$s_no, plants_raw$table_no, FUN = seq_along)))
+stopifnot(all(plants_raw$plant_type %in% c("FSTP", "STP co-treatment")),
+          all(plants_raw$capacity_unit %in% c("KLD", "MLD", "KL/week")))
+rule_type <- if_else(
+  plants_raw$table_no == 8 |
+    str_detect(plants_raw$technology, regex("STP co-treatment", ignore_case = TRUE)),
+  "STP co-treatment", "FSTP")
+stopifnot(identical(plants_raw$plant_type, rule_type))
+stopifnot(all(plants_raw$capacity_unit[plants_raw$plant_type == "STP co-treatment" &
+                                         plants_raw$location != "Puri"] == "MLD"),
+          all(plants_raw$capacity_unit[plants_raw$plant_type == "FSTP" &
+                                         plants_raw$location != "Patora"] == "KLD"))
+stopifnot(identical(plants_raw$location[!plants_raw$sampled],
+                    c("Surada", "Kashinagar", "Hinjilicut", "Talcher")),
+          all(plants_raw$state[!plants_raw$sampled] == "Odisha"))
+
+plants <- plants_raw |>
   mutate(
     state = factor(state, levels = state_levels),
     plant_type = factor(plant_type, levels = c("FSTP", "STP co-treatment")),
@@ -54,9 +78,45 @@ by_state <- plants |>
 totals <- by_state |>
   summarise(across(-state, sum))
 
+# The sampled counts per state must match the executive summary of the report,
+# and the totals must match the numbers quoted in the abstract and in the
+# figure captions and alternative texts.
+summary_counts <- tribble(
+  ~state,           ~fstp, ~stp,
+  "Telangana",      10L,   2L,
+  "Tamil Nadu",     5L,    4L,
+  "Odisha",         16L,   1L,
+  "Rajasthan",      3L,    0L,
+  "Uttar Pradesh",  7L,    3L,
+  "Madhya Pradesh", 4L,    0L,
+  "Chhattisgarh",   2L,    0L,
+  "Uttarakhand",    0L,    12L)
+stopifnot(identical(as.character(by_state$state), summary_counts$state),
+          identical(as.integer(by_state$fstp_sampled), summary_counts$fstp),
+          identical(as.integer(by_state$stp), summary_counts$stp))
+stopifnot(totals$fstp_listed == 51, totals$fstp_sampled == 47, totals$stp == 22)
+stopifnot(isTRUE(all.equal(by_state$kld_listed, c(283, 140, 522, 50, 127, 253, 6 + 9 / 7, 0))),
+          isTRUE(all.equal(by_state$kld_sampled, c(283, 140, 472, 50, 127, 253, 6 + 9 / 7, 0))))
+
 puri_kld <- plants |>
   filter(location == "Puri") |>
   pull(capacity_kld)
+
+patora_kld <- plants |>
+  filter(location == "Patora") |>
+  pull(capacity_kld)
+
+chhattisgarh_kld <- by_state |>
+  filter(state == "Chhattisgarh") |>
+  pull(kld_listed)
+
+largest_kld <- max(fstp$capacity_kld)
+n_largest <- sum(fstp$capacity_kld == largest_kld)
+stopifnot(all(fstp$state[fstp$capacity_kld == largest_kld] == "Madhya Pradesh"))
+
+# Formatters for numbers quoted in the prose
+f1 <- function(x) format(round(x, 1))
+n_word <- function(n) c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")[n]
 
 theme_manuscript <- function() {
   theme_minimal(base_size = 12) +
@@ -85,7 +145,7 @@ This manuscript answers one question from those tables. For each of the eight st
 
 ### Source
 
-The only data source is the PDF of the report stored in this repository under `data/`. I extracted the text of pages 26 to 33 with the pdftotext tool and transcribed Tables 1 to 8 by hand into the file `data/fstp_technology_tables.csv`. The CSV has one row per table row, `r nrow(plants)` rows in total, and keeps the capacity value and unit exactly as printed. Every capacity in the CSV was checked against the plant description in the state chapters of the report.
+The only data source is the PDF of the report stored in this repository under `data/raw_data/`. I extracted the text of pages 26 to 33 with the pdftotext tool and transcribed Tables 1 to 8 by hand into the file `data/derived_data/fstp-technology-tables.csv`. The CSV has one row per table row, `r nrow(plants)` rows in total, and keeps the capacity value and unit exactly as printed. Every capacity in the CSV was checked against the plant description in the state chapters of the report. The script `analysis/02-check-fstp-technology-tables.R` reads the row numbers, locations, capacities and sampling markers back from the text layer of the PDF and stops if any row of the CSV differs. The setup chunk of this manuscript repeats the checks that do not need the PDF, so the document does not render from a stale or edited table.
 
 ### Classification rules
 
@@ -97,7 +157,7 @@ I classified each row as an FSTP or an STP co-treatment plant with two rules.
 Four cases needed a judgement call.
 
 - Puri (Odisha, Table 3) is printed as "STP co-treatment: waste stabilization pond" with a capacity of 50 KLD. The Odisha chapter explains that Puri has a 50 KLD septage treatment plant that separates solids on site and sends the liquid fraction to the adjacent 15 MLD Mangala Ghat STP. The report counts Puri as the one STP in Odisha, and Table 10 of the report lists it among the 22 STPs. I follow the report and count Puri as an STP co-treatment plant, so its 50 KLD is not part of the FSTP capacity total.
-- Patora (Chhattisgarh, Table 7) is printed as "9 KLW". The Chhattisgarh chapter defines KLW as kilolitre per week. I convert it to 1.3 KLD (9 divided by 7) for the capacity total and keep the printed unit in the CSV.
+- Patora (Chhattisgarh, Table 7) is printed as "9 KLW". The Chhattisgarh chapter defines KLW as kilolitre per week. I convert it to `r f1(patora_kld)` KLD (9 divided by 7) for the capacity total and keep the printed unit in the CSV.
 - Jhansi (Uttar Pradesh, Table 5) appears twice, once at 6 KLD and once at 12 KLD. The Uttar Pradesh chapter says these are two treatment systems on the same campus. I count them as two FSTPs, which matches the report's own count of seven FSTPs in Uttar Pradesh.
 - Four Odisha rows (Surada, Kashinagar, Hinjilicut and Talcher) carry a double asterisk. The table footnote says water samples could not be collected because there was no outlet water. The report's narrative count for Odisha is 16 FSTPs and one STP, which excludes these four plants. I report Odisha both ways, with and without the four unsampled plants.
 
@@ -244,7 +304,7 @@ Telangana, Tamil Nadu, Odisha and Uttar Pradesh have both plant types. Rajasthan
 
 ### Installed FSTP capacity per state
 
-@fig-capacity shows the installed FSTP capacity per state. Odisha has the largest capacity because it has the most plants. Telangana is second, and Madhya Pradesh is third even though it has only four FSTPs, because two of its plants in Jabalpur have a capacity of 100 KLD each. @fig-plants shows every FSTP as one point, so the reader can see how many plants make up each state's total and how large each plant is.
+@fig-capacity shows the installed FSTP capacity per state. Odisha has the largest capacity because it has the most plants. Telangana is second, and Madhya Pradesh is third even though it has only four FSTPs, because `r n_word(n_largest)` of its plants in Jabalpur have a capacity of `r largest_kld` KLD each, the largest in the study. @fig-plants shows every FSTP as one point, so the reader can see how many plants make up each state's total and how large each plant is.
 
 ```{r}
 #| label: fig-capacity
@@ -331,7 +391,7 @@ tribble(
 
 The counts and capacities come from a hand transcription of a PDF. I checked each capacity against the state chapters of the report, but a transcription error is still possible. The report itself contains inconsistencies. For example, the sampling strategy section says the study covers six states and then lists eight, and the Erode STP is 50 MLD in Table 2 and 50.55 MLD in the Tamil Nadu chapter. Where the tables and the chapters differ, this manuscript uses the tables, because the question asks for the values in Tables 1 to 8.
 
-The capacity totals treat the 9 kilolitres per week at Patora as 1.3 KLD. If a reader prefers to leave Patora out, the Chhattisgarh total is 6 KLD and the total for all states falls by 1.3 KLD.
+The capacity totals treat the 9 kilolitres per week at Patora as 1.3 KLD. If a reader prefers to leave Patora out, the Chhattisgarh total is `r f1(chhattisgarh_kld - patora_kld)` KLD and the total for all states falls by `r f1(patora_kld)` KLD.
 
 ## Conclusion
 

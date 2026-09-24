@@ -1,10 +1,12 @@
 project:
-  type: manuscript
+  type: default
+  render:
+    - analysis/plants-per-state.qmd
+    - analysis/faecal-coliform-log-reduction.qmd
+  output-dir: _output
+  execute-dir: project
 
-manuscript:
-  article: index.qmd
-  resources:
-    - data/fstp_technology_tables.csv
+bibliography: references.bib
 
 format:
   html:
@@ -14,7 +16,6 @@ format:
     fig-height: 5
   docx:
     number-sections: true
-    notebook-links: false
     fig-width: 7
     fig-height: 4.5
 

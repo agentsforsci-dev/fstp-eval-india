@@ -1,0 +1,302 @@
+---
+title: "Faecal coliform log reduction from inlet to outlet at the 47 FSTPs in the CSE Phase II study, by treatment technology"
+subtitle: "Computed from Annexure II of the report"
+author:
+  - name: Lars Schöbitz
+    email: lars@lse.de
+    roles: [analysis, writing]
+date: 2026-09-24
+abstract: |
+  Annexure II of the 2023 Centre for Science and Environment (CSE) Phase II report prints the mean faecal coliform (FC) count in the sludge, at the inlet and at the outlet of each of the 47 faecal sludge treatment plants (FSTPs) it sampled. I extracted these values with a script, computed the log10 reduction from inlet to outlet for every plant, and compared the plants that the report groups under DEWATS with the plants it groups under moving bed biofilm reactor, electrocoagulation and packaged treatment module, which I call mechanised. Every plant reduces FC. The reduction ranges from about 0.3 log at Phulera to about 4.8 log at Warangal. The median is about 2.4 log for the 33 DEWATS based plants and about 2.7 log for the 8 mechanised plants. A Wilcoxon rank sum test does not distinguish the two groups, and the 95 per cent confidence interval for the shift between them spans about two log units, so the data neither show nor rule out a difference. Ten plants discharge more than 1000 MPN/100 mL, the limit the report applies.
+keywords: [faecal sludge treatment, faecal coliform, log reduction, DEWATS, India, Centre for Science and Environment]
+format: docx
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(gt)
+
+state_levels <- c("Telangana", "Tamil Nadu", "Odisha", "Rajasthan",
+                  "Uttar Pradesh", "Madhya Pradesh", "Chhattisgarh", "Uttarakhand")
+
+blue <- "#2a78d6"
+orange <- "#eb6834"
+surface <- "#fcfcfb"
+ink <- "#0b0b0b"
+ink_muted <- "#52514e"
+
+theme_manuscript <- function() {
+  theme_minimal(base_size = 12) +
+    theme(
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_line(colour = "#e6e5e1", linewidth = 0.3),
+      axis.text = element_text(colour = ink),
+      axis.title = element_text(colour = ink_muted),
+      legend.position = "top",
+      legend.justification = "left",
+      legend.text = element_text(colour = ink),
+      plot.background = element_rect(fill = surface, colour = NA),
+      plot.title.position = "plot"
+    )
+}
+
+plants <- read_csv("data/derived_data/fstp-technology-tables.csv", show_col_types = FALSE)
+fc_raw <- read_csv("data/derived_data/annexure-2-faecal-coliform.csv", show_col_types = FALSE)
+
+# Checks. A stale or edited derived table stops the render here.
+fstp_sampled <- plants |> filter(plant_type == "FSTP", sampled)
+stopifnot(nrow(fc_raw) == 47, nrow(fstp_sampled) == 47)
+joined <- inner_join(
+  fc_raw,
+  fstp_sampled |> select(table_no, s_no, location_tech = location, technology),
+  by = c("table_no", "s_no"))
+stopifnot(nrow(joined) == 47, all(joined$location == joined$location_tech))
+stopifnot(nrow(anti_join(fstp_sampled, fc_raw, by = c("table_no", "s_no"))) == 0)
+stopifnot(all(fc_raw$fc_inlet > 0), all(fc_raw$fc_outlet > 0),
+          all(is.na(fc_raw$fc_fs) | fc_raw$fc_fs > 0))
+group_counts <- fc_raw |> count(table9_group) |> deframe()
+stopifnot(identical(unname(group_counts[c("DEWATS", "MBBR", "Geotube", "Mizuchi", "ECF", "P-STP")]),
+                    c(33L, 6L, 3L, 3L, 1L, 1L)))
+table9_mismatch <- fc_raw |> filter(abs(fc_outlet - table9_fc_outlet) > 1)
+stopifnot(setequal(table9_mismatch$location, c("Siddipet", "Sircilla", "Phulera")))
+
+# Analysis groups, derived from the Table 9 headings of the report
+group_lookup <- tribble(
+  ~table9_group, ~group,         ~technology_label,
+  "DEWATS",      "DEWATS based", "DEWATS or DWWT",
+  "MBBR",        "Mechanised",   "Moving bed biofilm reactor",
+  "ECF",         "Mechanised",   "Electrocoagulation",
+  "P-STP",       "Mechanised",   "Packaged treatment module",
+  "Geotube",     "Other",        "Geotube dewatering",
+  "Mizuchi",     "Other",        "Mizuchi biofilter")
+group_levels <- c("DEWATS based", "Mechanised", "Other")
+group_colours <- c("DEWATS based" = blue, "Mechanised" = orange, "Other" = ink_muted)
+fc_limit <- 1000
+
+fc <- joined |>
+  left_join(group_lookup, by = "table9_group") |>
+  mutate(
+    group = factor(group, levels = group_levels),
+    state = factor(state, levels = state_levels),
+    lrv_inlet = log10(fc_inlet) - log10(fc_outlet),
+    lrv_fs = log10(fc_fs) - log10(fc_outlet),
+    meets_limit = fc_outlet <= fc_limit)
+
+summarise_lrv <- function(d, value) {
+  d |>
+    summarise(
+      n = n(),
+      median = median({{ value }}, na.rm = TRUE),
+      q1 = quantile({{ value }}, 0.25, na.rm = TRUE),
+      q3 = quantile({{ value }}, 0.75, na.rm = TRUE),
+      min = min({{ value }}, na.rm = TRUE),
+      max = max({{ value }}, na.rm = TRUE),
+      n_meets = sum(meets_limit),
+      .groups = "drop")
+}
+by_group <- fc |> group_by(group) |> summarise_lrv(lrv_inlet)
+all_plants <- fc |> summarise_lrv(lrv_inlet) |> mutate(group = "All 47 plants")
+g <- split(by_group, by_group$group)
+
+compare_groups <- function(d, value, label) {
+  d <- d |>
+    mutate(group = as.character(group), value = {{ value }}) |>
+    filter(group %in% group_levels[1:2], !is.na(value)) |>
+    mutate(group = factor(group, levels = group_levels[1:2]))
+  wt <- wilcox.test(value ~ group, data = d, conf.int = TRUE, conf.level = 0.95)
+  meds <- d |> group_by(group) |> summarise(n = n(), median = median(value), .groups = "drop")
+  tibble(
+    variant = label,
+    n_dewats = meds$n[1], n_mech = meds$n[2],
+    median_dewats = meds$median[1], median_mech = meds$median[2],
+    median_diff = meds$median[1] - meds$median[2],
+    hl_shift = unname(wt$estimate), ci_low = wt$conf.int[1], ci_high = wt$conf.int[2],
+    w = unname(wt$statistic), p = wt$p.value, method = wt$method)
+}
+
+primary <- compare_groups(fc, lrv_inlet, "Inlet to outlet, groups as in Table 9")
+variants <- bind_rows(
+  primary,
+  compare_groups(fc |> mutate(group = if_else(table9_group == "Geotube", "Mechanised", as.character(group))),
+                 lrv_inlet, "Geotube plants counted as mechanised"),
+  compare_groups(fc |> filter(fc_outlet != 30), lrv_inlet,
+                 "Without the plants whose outlet is exactly 30"),
+  compare_groups(fc, lrv_fs, "Sludge from tankers to outlet, plants with a sludge value"),
+  compare_groups(fc |> mutate(group = if_else(table9_group == "Mizuchi", "DEWATS based", as.character(group))),
+                 lrv_inlet, "Mizuchi plants counted as DEWATS based"))
+
+ties <- any(duplicated(fc$lrv_inlet[fc$group != "Other"]))
+n_outlet_30 <- sum(fc$fc_outlet == 30)
+n_fs <- sum(!is.na(fc$fc_fs))
+n_above <- sum(!fc$meets_limit)
+highest <- fc |> slice_max(lrv_inlet, n = 1)
+lowest <- fc |> slice_min(lrv_inlet, n = 1)
+n_over_3 <- sum(fc$lrv_inlet >= 3)
+
+f2 <- function(x) sprintf("%.2f", x)
+f1 <- function(x) sprintf("%.1f", x)
+fp <- function(p) if (p < 0.001) "below 0.001" else sprintf("%.2f", p)
+```
+
+## Introduction
+
+The Centre for Science and Environment (CSE) evaluated 47 faecal sludge treatment plants (FSTPs) and 22 sewage treatment plants that co-treat faecal sludge in eight Indian states, and published the results in 2023 [@narain2023]. Annexure II of the report prints, for every plant, the mean value of each measured parameter in three samples: the faecal sludge delivered by tankers, the liquid entering the treatment modules, and the final discharge. One of these parameters is faecal coliform (FC), reported as the most probable number per 100 mL (MPN/100 mL). The report compares outlet FC against the discharge limit of `r format(fc_limit, big.mark = ",")` MPN/100 mL set by the Ministry of Environment, Forest and Climate Change, but it does not compute how much each plant reduces FC.
+
+This manuscript answers two questions from the Annexure II values. By how many log10 units does FC fall from inlet to outlet at each FSTP? And does the median log reduction differ between plants built on decentralised wastewater treatment systems (DEWATS) and mechanised plants, meaning plants built on a moving bed biofilm reactor, electrocoagulation or a packaged treatment module?
+
+## Data and method
+
+### Source and extraction
+
+The values come from pages 171 to 176 of the report, where Annexure II prints one table per state. The script `analysis/01-extract-annexure-2-faecal-coliform.R` reads the text layer of those pages, picks the FC value from the sludge, inlet and outlet row of each plant, joins the plants to the technology tables of the report through a hand written name map, and writes `data/derived_data/annexure-2-faecal-coliform.csv`. The script stops unless it finds exactly 47 FSTPs with positive inlet and outlet values and the technology groups match the report. I checked every extracted value once against the rendered page images. The 22 sewage treatment plants printed in the same tables are left out because the question concerns FSTPs.
+
+Each printed value is a mean over sampling rounds. The report describes three rounds in Telangana, Tamil Nadu, Odisha, Madhya Pradesh, Chhattisgarh and Uttarakhand, five in Rajasthan, and does not say how many in Uttar Pradesh. The annexure prints no per round values, so all results below are computed from means.
+
+### Definition of the log reduction
+
+The report defines the inlet as the leachate that enters the treatment modules after the solids have been separated from the sludge, and it computes treatment efficiency from this inlet to the final discharge. I follow that definition. The log reduction of a plant is log10 of the inlet FC minus log10 of the outlet FC. A reduction of 2 means the outlet count is one hundredth of the inlet count.
+
+The sludge delivered by tankers is a second possible starting point, since it includes the removal that happens during solid liquid separation. Annexure II prints a sludge FC value for `r n_fs` of the 47 plants. For those plants I also report the log reduction from sludge to outlet as a secondary measure. For the 6 KLD unit at Jhansi the annexure labels the inlet row "ABR Inlet", after the first treatment module, and I use that row as the inlet. For Unnao the annexure prints an extra row for the intermediate ABR outlet, which I do not use.
+
+### Technology groups
+
+The report never uses the word mechanised. Its Table 9 lists the 47 FSTPs under six technology headings, and I use those headings as the only source for the grouping. The 33 plants under "Decentralized wastewater treatment system (DWWTs/DEWATS)" form the DEWATS based group. This includes Unnao, which has a screw press ahead of its DEWATS modules, because Table 9 places it there. The mechanised group joins the six plants under "Moving Bed Biofilm Reactor (MBBR)" with Nalgonda under "Electrocoagulation-Flotation (ECF)" and Warangal under "Packaged sewage treatment plant (P-STP)", eight plants in all. The MBBR heading includes Uppal, which the technology table calls combined biological treatment, and Modinagar, which it calls a hyper core system, again because Table 9 places them there.
+
+Six plants fit neither group and are shown as "Other". The three geotube plants dewater sludge in geotextile bags by gravity and polish the filtrate with aeration and filters. The three Mizuchi plants in Jabalpur are natural biofilters with vermicomposting. Both technologies are outside the two groups named in the question, so they do not enter the primary comparison. Two sensitivity variants add them to one group or the other.
+
+### Statistics
+
+For each group I report the number of plants, the median log reduction and the interquartile range (IQR), and the number of plants whose outlet is within the discharge limit. The two group comparison uses a two sided Wilcoxon rank sum test on the plant level log reductions, with the Hodges Lehmann estimate of the shift between the groups and its 95 per cent confidence interval (CI). The shift is reported as DEWATS based minus mechanised. Four sensitivity variants repeat the test after moving the geotube plants into the mechanised group, after dropping the `r n_outlet_30` plants whose outlet value is exactly 30, using the sludge to outlet reduction instead, and after moving the Mizuchi plants into the DEWATS based group. With eight plants in the mechanised group the test can only detect a large shift, so the confidence interval matters more than the p value.
+
+## Results
+
+### Log reduction at each plant
+
+@fig-inlet-outlet shows the inlet and outlet FC of every plant on a log scale, so the length of each line is the log reduction. Every one of the 47 plants reduces FC. The largest reduction is `r f1(highest$lrv_inlet)` log at `r highest$location` and the smallest is `r f1(lowest$lrv_inlet)` log at `r lowest$location`. `r n_over_3` plants reduce FC by three log units or more. `r n_above` plants discharge more than `r format(fc_limit, big.mark = ",")` MPN/100 mL, and all but one of them are DEWATS based.
+
+```{r}
+#| label: fig-inlet-outlet
+#| fig-cap: "Faecal coliform at the inlet (open circle) and outlet (filled circle) of each FSTP, on a log scale, from Annexure II of the report. The length of each line is the log10 reduction, printed at the right. Plants are grouped as in Table 9 of the report and ordered by their reduction. The dashed line is the discharge limit of 1000 MPN/100 mL. Values are means over sampling rounds."
+#| fig-alt: "Dumbbell chart with 47 rows in three panels: DEWATS based (33 plants), mechanised (8) and other (6). Each row joins an open circle at the inlet count to a filled circle at the outlet count on a log axis from 1 to 10 million MPN per 100 mL. Reductions range from 0.3 log at Phulera to 4.8 log at Warangal. Ten plants have outlets to the right of the dashed 1000 line, nine of them DEWATS based."
+#| fig-width: 7
+#| fig-height: 9
+fig_data <- fc |>
+  mutate(plant = fct_reorder(annex_location, lrv_inlet))
+points <- fig_data |>
+  select(plant, group, fc_inlet, fc_outlet) |>
+  pivot_longer(c(fc_inlet, fc_outlet), names_to = "sample", values_to = "value") |>
+  mutate(sample = factor(if_else(sample == "fc_inlet", "Inlet", "Outlet"), levels = c("Inlet", "Outlet")))
+
+ggplot(fig_data, aes(y = plant)) +
+  geom_vline(xintercept = fc_limit, linetype = "dashed", colour = ink_muted, linewidth = 0.4) +
+  geom_segment(aes(x = fc_inlet, xend = fc_outlet, yend = plant, colour = group), linewidth = 0.7) +
+  geom_point(data = points, aes(x = value, colour = group, shape = sample), size = 2.2, stroke = 0.9) +
+  geom_text(aes(x = 3e8, label = f1(lrv_inlet)), hjust = 1, size = 2.8, colour = ink) +
+  facet_grid(group ~ ., scales = "free_y", space = "free_y") +
+  scale_x_log10(limits = c(1, 3e8), breaks = 10^(0:7),
+                labels = scales::label_number(scale_cut = scales::cut_short_scale()),
+                expand = expansion(mult = c(0, 0.01))) +
+  scale_colour_manual(values = group_colours, guide = "none") +
+  scale_shape_manual(values = c(Inlet = 1, Outlet = 19), name = NULL) +
+  guides(shape = guide_legend(override.aes = list(colour = ink))) +
+  labs(x = "Faecal coliform (MPN/100 mL, log scale); log10 reduction at the right", y = NULL) +
+  theme_manuscript() +
+  theme(strip.text = element_text(colour = ink, hjust = 0, size = 11),
+        axis.text.y = element_text(size = 8),
+        panel.spacing.y = unit(0.8, "lines"))
+```
+
+@tbl-plants lists the values behind the figure.
+
+```{r}
+#| label: tbl-plants
+#| tbl-cap: "Faecal coliform (MPN/100 mL) in the sludge from tankers, at the inlet and at the outlet of each FSTP, and the log10 reduction, from Annexure II of the report. Plants are grouped as in Table 9 of the report and sorted by the inlet to outlet reduction. Sludge values are not printed for nine plants."
+fc |>
+  arrange(group, desc(lrv_inlet)) |>
+  mutate(within = if_else(meets_limit, "Yes", "No")) |>
+  select(group, state, annex_location, technology_label, fc_fs, fc_inlet, fc_outlet,
+         lrv_inlet, lrv_fs, within) |>
+  gt(groupname_col = "group") |>
+  cols_label(
+    state = "State",
+    annex_location = "Plant as printed",
+    technology_label = "Technology",
+    fc_fs = "Sludge",
+    fc_inlet = "Inlet",
+    fc_outlet = "Outlet",
+    lrv_inlet = "Inlet to outlet",
+    lrv_fs = "Sludge to outlet",
+    within = "Outlet within limit") |>
+  tab_spanner(label = "Faecal coliform (MPN/100 mL)", columns = c(fc_fs, fc_inlet, fc_outlet)) |>
+  tab_spanner(label = "Log10 reduction", columns = c(lrv_inlet, lrv_fs)) |>
+  fmt_number(columns = c(fc_fs, fc_inlet, fc_outlet), decimals = 1, drop_trailing_zeros = TRUE) |>
+  fmt_number(columns = c(lrv_inlet, lrv_fs), decimals = 2) |>
+  sub_missing(columns = c(fc_fs, lrv_fs), missing_text = "not printed") |>
+  tab_options(table.font.size = px(11))
+```
+
+### Comparison between groups
+
+@tbl-groups summarises the log reduction by group. The median is `r f2(g[["DEWATS based"]]$median)` log for the DEWATS based plants, with an IQR from `r f2(g[["DEWATS based"]]$q1)` to `r f2(g[["DEWATS based"]]$q3)`, and `r f2(g[["Mechanised"]]$median)` log for the mechanised plants, with an IQR from `r f2(g[["Mechanised"]]$q1)` to `r f2(g[["Mechanised"]]$q3)`. The DEWATS based group spreads much wider than the mechanised group in both directions.
+
+```{r}
+#| label: tbl-groups
+#| tbl-cap: "Log10 reduction of faecal coliform from inlet to outlet by technology group, and the number of plants whose outlet is within the discharge limit of 1000 MPN/100 mL."
+bind_rows(by_group |> mutate(group = as.character(group)), all_plants) |>
+  mutate(iqr = paste(f2(q1), "to", f2(q3)),
+         range = paste(f2(min), "to", f2(max)),
+         within = paste0(n_meets, " of ", n)) |>
+  select(group, n, median, iqr, range, within) |>
+  gt(rowname_col = "group") |>
+  cols_label(n = "Plants", median = "Median log10 reduction", iqr = "Interquartile range",
+             range = "Minimum to maximum", within = "Outlet within limit") |>
+  fmt_number(columns = median, decimals = 2) |>
+  tab_style(style = cell_text(weight = "bold"),
+            locations = list(cells_body(rows = group == "All 47 plants"),
+                             cells_stub(rows = group == "All 47 plants"))) |>
+  tab_options(table.font.size = px(12))
+```
+
+The Wilcoxon rank sum test does not distinguish the two groups. The Hodges Lehmann shift from DEWATS based to mechanised is `r f2(primary$hl_shift)` log, with a 95 per cent CI from `r f2(primary$ci_low)` to `r f2(primary$ci_high)` log and a p value of `r fp(primary$p)`. The interval covers zero and spans about two log units. In plain terms, the data are consistent with the DEWATS based plants removing one log unit less than the mechanised plants, with the two groups being the same, and with the DEWATS based plants removing more than half a log unit more. `r if (ties) "Because some plants share the same log reduction, R used the normal approximation for the test." else "No two plants in the comparison share the same log reduction, so the test is exact."` @tbl-comparison repeats the comparison under the four sensitivity variants. None of them changes the picture.
+
+```{r}
+#| label: tbl-comparison
+#| tbl-cap: "Comparison of the log10 reduction between DEWATS based and mechanised plants under the primary grouping and four sensitivity variants. The shift is the Hodges Lehmann estimate of DEWATS based minus mechanised with its 95 per cent confidence interval. W and p come from a two sided Wilcoxon rank sum test."
+variants |>
+  mutate(ci = paste(f2(ci_low), "to", f2(ci_high)),
+         method = str_replace(method, "Wilcoxon rank sum ", "")) |>
+  select(variant, n_dewats, n_mech, median_dewats, median_mech, hl_shift, ci, w, p, method) |>
+  gt() |>
+  cols_label(variant = "Variant", n_dewats = "DEWATS based", n_mech = "Mechanised",
+             median_dewats = "DEWATS based", median_mech = "Mechanised",
+             hl_shift = "Shift", ci = "95 per cent CI", w = "W", p = "p", method = "Test") |>
+  tab_spanner(label = "Plants", columns = c(n_dewats, n_mech)) |>
+  tab_spanner(label = "Median log10 reduction", columns = c(median_dewats, median_mech)) |>
+  fmt_number(columns = c(median_dewats, median_mech, hl_shift), decimals = 2) |>
+  fmt_number(columns = p, decimals = 2) |>
+  fmt_integer(columns = w) |>
+  tab_options(table.font.size = px(11))
+```
+
+## Limitations
+
+The log reductions are computed from means over sampling rounds, because the annexure prints only means. The log of a mean is not the mean of the logs, and one round with a very high count pulls the mean up, so a plant's reduction computed here can differ from the reduction it achieved in any single round. The number of rounds is not stated for Uttar Pradesh.
+
+An outlet value of exactly 30 MPN/100 mL is printed for `r n_outlet_30` plants, four of them DEWATS based and one mechanised. The report does not explain it, and it may be a reporting floor of the counting method. If so, the reductions at those plants are lower bounds. Dropping them does not change the comparison.
+
+The outlet values in Annexure II differ from those in Table 9 of the report for Siddipet (13 against 6), Sircilla (631 against 549) and Phulera (177 against 173). This manuscript uses the annexure because the question names it. The annexure also prints a sludge FC of 30 for Thuraiyur, equal to its outlet, which is not plausible for raw sludge, so the sludge to outlet reduction for that plant is zero and should not be trusted.
+
+The three Mizuchi plants in Jabalpur are called sewage co-treatment plants in the Madhya Pradesh chapter of the report but are listed as FSTPs in its technology table and in Table 9. They sit outside the two compared groups, so the label does not affect the primary result.
+
+The mechanised group has eight plants. A test on eight against 33 values detects only large shifts, which is why the confidence interval is wide. The comparison also treats plants as independent observations, although they differ in size, age, loading and operation, and all values come from a single report.
+
+## Conclusion
+
+Every one of the 47 FSTPs in Annexure II reduces faecal coliform between inlet and outlet, by `r f1(lowest$lrv_inlet)` log at `r lowest$location` up to `r f1(highest$lrv_inlet)` log at `r highest$location`, with `r n_over_3` plants at three log or more. The median reduction is `r f2(g[["DEWATS based"]]$median)` log for the 33 DEWATS based plants and `r f2(g[["Mechanised"]]$median)` log for the 8 mechanised plants. The Wilcoxon rank sum test gives a p value of `r fp(primary$p)` and a confidence interval for the shift from `r f2(primary$ci_low)` to `r f2(primary$ci_high)` log, so the data do not show a difference between the groups and are too few to rule one out.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::
