@@ -1,0 +1,48 @@
+state,table_no,s_no,location,annex_table_no,annex_page,annex_location,fc_fs,fs_printed,inlet_label,fc_inlet,fc_outlet,table9_group,table9_fc_outlet,note
+Telangana,1,1,Boduppal,1,171,Boduppal,430000,value,Inlet,421000,14,Geotube,14,
+Telangana,1,2,Uppal,1,172,Uppal,380000,value,Inlet,32766.7,55,MBBR,55,
+Telangana,1,5,Bhongir,1,171,Bongir,9300,value,Inlet,1116.7,29,Geotube,29,
+Telangana,1,6,Shadnagar,1,171,Shandnagar,,blank,Inlet,976.7,46,Geotube,46,FS row printed without values
+Telangana,1,7,Siddipet,1,171,Siddipet,11000000,value,Inlet,67410,13,DEWATS,6,Table 9 prints outlet FC 6 for this plant
+Telangana,1,8,Sircilla,1,171,Sircilla,1570000,value,Inlet,620100,631,DEWATS,549,Table 9 prints outlet FC 549 for this plant
+Telangana,1,9,Nirmal,1,171,Nirmal,110000,value,Inlet,2150,235,MBBR,235,
+Telangana,1,10,Kamareddy,1,171,Kamareddy,886666.7,value,Inlet,33776.7,34,MBBR,34,
+Telangana,1,11,Warangal,1,172,Warangal,6700000,value,Inlet,849766.7,13,P-STP,13,
+Telangana,1,12,Nalgonda,1,171,Nalgonda,1365000,value,Inlet,15716.7,20,ECF,20,
+Tamil Nadu,2,2,"PNP, Coimbatore",2,172,Periyanaickenpalayam,150000,value,Inlet,382143.3,1330,MBBR,1330,Name printed across two lines
+Tamil Nadu,2,4,"Thuraiyur, Tiruchirapalli",2,172,"Thuraiyur, Trichy",30,value,Inlet,4606.7,30,DEWATS,30,
+Tamil Nadu,2,7,"Tirumangalam, Madurai",2,172,"Thirumangalam, Madurai",226500,value,Inlet,530,14,DEWATS,14,Name printed across two lines
+Tamil Nadu,2,8,"VK puram, Tirunelveli",2,172,Vickramasingapuram,43000,value,Inlet,11966.7,251,DEWATS,251,Name printed across two lines
+Tamil Nadu,2,9,"Shenkottai, Thenkasi",2,172,Sengottai,,blank,Inlet,56333.3,296,DEWATS,296,FS row printed without values
+Odisha,3,2,Balasore,3,173,Balasore,21100000,value,Inlet,1616667,72,DEWATS,72,
+Odisha,3,3,Baripada,3,173,Baripada,38103100,value,Inlet,304333,5838,DEWATS,5838,
+Odisha,3,4,Bhubaneswar,3,173,Bhubaneswar,141500,value,Inlet,276500,314,DEWATS,314,
+Odisha,3,5,Dhenkanal,3,173,Dhenkanal,1380000,value,Inlet,230046,61,DEWATS,61,
+Odisha,3,6,Berhampur,3,173,Berhampur,5200000,value,Inlet,784067,300,DEWATS,300,
+Odisha,3,7,Angul,3,173,Angul,1250000,value,Inlet,142000,16947,DEWATS,16947,
+Odisha,3,8,Sambalpur,3,173,Sambalpur,8300000,value,Inlet,98667,9,DEWATS,9,
+Odisha,3,9,Rourkela,3,173,Rourkela,545333,value,Inlet,23100,5,DEWATS,5,
+Odisha,3,10,Asika,3,173,Asika,,NA,Inlet,8023.3,30,DEWATS,30,FS row printed as NA
+Odisha,3,11,Bhadrak,3,173,Bhadrak,1275000,value,Inlet,52200,32,DEWATS,32,
+Odisha,3,12,Choudwar,3,173,Chodwar,430000,value,Inlet,39433.3,30,DEWATS,30,Outlet row printed at the top of page 174 without the plant name
+Odisha,3,13,Jagatsinghpur,3,174,Jagatsinghpur,2515000,value,Inlet,4176666.7,320,DEWATS,320,
+Odisha,3,14,Jatni,3,174,Jatni,,dash,Inlet,162100,32,DEWATS,32,FS row printed as dashes
+Odisha,3,15,Khordha,3,174,Khordha,930000,value,Inlet,368130.7,200,DEWATS,200,
+Odisha,3,16,Nimapada,3,174,Nimapada,,dash,Inlet,23180,30,DEWATS,30,FS row printed as dashes
+Odisha,3,17,Paralakhemundi,3,174,Paralakhemundi,230000,value,Inlet,2950,33,DEWATS,33,Name printed across two lines
+Rajasthan,4,1,Phulera,4,174,Phulera,2580000,value,Inlet,369.2,177,DEWATS,173,Table 9 prints outlet FC 173 for this plant
+Rajasthan,4,2,Lalsot,4,174,Lalsot,3018250,value,Inlet,20306,622,DEWATS,622,
+Rajasthan,4,3,Khandela,4,174,Khandela,6175750,value,Inlet,8624.4,35,DEWATS,35,
+Uttar Pradesh,5,1,Unnao,5,175,Unnao,304080,value,Inlet,2603,69,DEWATS,69,An intermediate ABR outlet row (FC 1196) is printed and not used
+Uttar Pradesh,5,2,Jhansi,5,175,Jhansi II (6KLD),20686667,value,ABR Inlet,3748444,16593,DEWATS,16593,Inlet row printed as ABR Inlet and used as the inlet; Outlet row printed at the top of page 176 without the plant name
+Uttar Pradesh,5,3,Jhansi,5,175,Jhansi I (12KLD),5114333,value,Inlet,480000,2165,DEWATS,2165,
+Uttar Pradesh,5,4,Chunar,5,176,Chunar,4866667,value,Inlet,31100,3820,DEWATS,3820,
+Uttar Pradesh,5,5,Modinagar,5,175,Modinagar,46000000,value,Inlet,13000,30,MBBR,30,
+Uttar Pradesh,5,6,Loni,5,175,Loni,2154600,value,Inlet,118750,765,MBBR,765,
+Uttar Pradesh,5,7,Amethi,5,175,Amethi,2300750,value,Inlet,33500,2400,DEWATS,2400,
+Madhya Pradesh,6,1,Indore,6,176,"Kalibillod, Indore",,no_row,Inlet,77066.7,4026.7,DEWATS,4026,No FS row printed
+Madhya Pradesh,6,2,"Elanza, Jabalpur",6,176,Elanza,,no_row,Inlet,1665000,14300,Mizuchi,14299,No FS row printed
+Madhya Pradesh,6,3,"Ojus, Jabalpur",6,176,Ojus,,no_row,Inlet,596500,233,Mizuchi,233,No FS row printed
+Madhya Pradesh,6,4,"St. Alosius, Jabalpur",6,176,St.Alosius,,no_row,Inlet,21715,133,Mizuchi,133,No FS row printed
+Chhattisgarh,7,1,Kumhari,6,176,Kumhari,5965000,value,Inlet,19233.3,2310,DEWATS,2310,
+Chhattisgarh,7,2,Patora,6,176,Patora,2765000,value,Inlet,5906.7,117.3,DEWATS,117,

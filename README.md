@@ -9,17 +9,21 @@ The repository follows a fixed layout. Raw data stays in `data/raw_data/`, table
 - `data/raw_data/cse-2023-fstp-evaluation-phase-2.pdf` is the CSE report as downloaded. Its original file name was `1689832445895.pdf`.
 - `data/derived_data/fstp-technology-tables.csv` is a hand transcription of Tables 1 to 8 of the report, one row per plant. No script produces it.
 - `data/metadata/codebook.csv` documents every derived table, one row per variable. The `file` column names the table each row belongs to.
-- `analysis/plants-per-state.qmd` answers this question: for each of the eight states in the report, how many faecal sludge treatment plants (FSTPs) and how many STP co-treatment plants were evaluated, and what is the total installed FSTP capacity in kilolitres per day? All tables and charts in it are produced from the derived table by R code chunks.
+- `data/derived_data/annexure-2-faecal-coliform.csv` holds the faecal coliform values of the 47 sampled FSTPs from Annexure II of the report, together with their Table 9 technology group. The script below writes it.
+- `analysis/01-extract-annexure-2-faecal-coliform.R` reads the report PDF, extracts those values, checks them against the technology table, and writes the derived table above. It needs the pdftotext tool from poppler.
+- `analysis/plants-per-state.qmd` answers this question: for each of the eight states in the report, how many faecal sludge treatment plants (FSTPs) and how many STP co-treatment plants were evaluated, and what is the total installed FSTP capacity in kilolitres per day? It renders to HTML and DOCX.
+- `analysis/faecal-coliform-log-reduction.qmd` answers this question: by how many log10 units does faecal coliform fall from inlet to outlet at each FSTP in Annexure II, and does the median log reduction differ between DEWATS based plants and mechanised plants? It renders to DOCX and has one figure. All tables and charts in both manuscripts are produced from the derived tables by R code chunks.
 - `references.bib` holds the citations.
 - `prompts/` holds the verbatim prompts behind Claude assisted commits. Each commit message points to its prompt files in a `Prompts:` trailer.
 - `plan-faecal-coliform-log-reduction.md` is the working plan for the next manuscript.
 
-## Render
+## Reproduce
 
-Run the following from the repository root. Output is written to `_output/analysis/`, which git ignores.
+Run the following from the repository root. The first command rebuilds the Annexure II table from the PDF; it is committed, so this step is optional. The second renders both manuscripts into `_output/analysis/`, which git ignores.
 
 ```
+Rscript analysis/01-extract-annexure-2-faecal-coliform.R
 quarto render
 ```
 
-Rendering needs Quarto 1.4 or later and R with the tidyverse and gt packages. Paths inside the documents are relative to the repository root.
+Rendering needs Quarto 1.4 or later and R with the tidyverse and gt packages. Paths inside the documents and the script are relative to the repository root.
